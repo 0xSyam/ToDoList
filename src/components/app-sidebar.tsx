@@ -4,16 +4,9 @@ import * as React from "react";
 import {
   CheckSquare,
   Calendar,
-  Star,
   Tag,
   GalleryVerticalEnd,
-  AudioWaveform,
   Command,
-  Clock,
-  Archive,
-  Trash2,
-  Settings,
-  Plus,
   Home,
   ChevronDown,
   ChevronRight,
@@ -39,6 +32,12 @@ import { useRouter } from "next/navigation";
 import { logout } from "@/utils/api";
 import { useToast } from "@/hooks/use-toast";
 
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  items?: NavItem[];
+}
 
 const data = {
   teams: [
@@ -69,7 +68,7 @@ const data = {
       url: "#",
       icon: Tag,
     },
-  ],
+  ] as NavItem[],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

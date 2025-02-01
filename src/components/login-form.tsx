@@ -21,10 +21,11 @@ export default function LoginForm({ className, ...props }: React.ComponentPropsW
 
  
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      
-      router.push("/dashboard");
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      if (token) {
+        router.push("/dashboard");
+      }
     }
   }, [router]);
 
@@ -36,8 +37,10 @@ export default function LoginForm({ className, ...props }: React.ComponentPropsW
       const response = await login(email, password);
 
       if (response.data) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+        }
         toast({
           title: "Login successful",
           description: response.data.message,
@@ -57,9 +60,7 @@ export default function LoginForm({ className, ...props }: React.ComponentPropsW
     }
   };
 
-  
-  const token = localStorage.getItem("token");
-  if (token) {
+  if (typeof window !== "undefined" && localStorage.getItem("token")) {
     return null; 
   }
 
@@ -107,7 +108,7 @@ export default function LoginForm({ className, ...props }: React.ComponentPropsW
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/signup" className="underline underline-offset-4">
                 Sign up
               </Link>

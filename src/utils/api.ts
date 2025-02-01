@@ -1,11 +1,10 @@
-
 function formatDate(date: string): string {
   return date.split("T")[0]
 }
 
 const API_BASE_URL = "https://todo-gdgoc.up.railway.app/api"
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data?: T
   error?: string
 }
@@ -32,6 +31,16 @@ export interface Todo {
   updated_at: string
 }
 
+interface LoginResponseData {
+  token: string;
+  user: {
+    name: string;
+    email: string;
+    // Add other user properties if needed
+  };
+  message: string;
+}
+
 export async function register(name: string, email: string, password: string): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",
@@ -41,13 +50,13 @@ export async function register(name: string, email: string, password: string): P
   return handleApiResponse(response)
 }
 
-export async function login(email: string, password: string): Promise<ApiResponse> {
+export async function login(email: string, password: string): Promise<ApiResponse<LoginResponseData>> {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   })
-  return handleApiResponse(response)
+  return handleApiResponse<LoginResponseData>(response)
 }
 
 export async function logout(token: string): Promise<ApiResponse> {

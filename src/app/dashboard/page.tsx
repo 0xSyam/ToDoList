@@ -26,17 +26,17 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import { type Todo, createTodo, listTodos, updateTodo, deleteTodo } from "@/utils/api"
+import { addDays } from "date-fns"
 
 type TodoWithoutId = Omit<Todo, "user_id" | "created_at" | "updated_at">
 
 interface TodoFormProps {
-  isEdit: boolean
   currentTodo: TodoWithoutId
   setCurrentTodo: (todo: TodoWithoutId) => void
 }
 
 const defaultTodo: TodoWithoutId = {
-  todo_id: 0, 
+  todo_id: 0,
   title: "",
   description: "",
   priority: "medium",
@@ -61,7 +61,7 @@ const EmptyState: React.FC<{ onCreateClick: () => void }> = ({ onCreateClick }) 
   )
 }
 
-const TodoForm: React.FC<TodoFormProps> = ({ isEdit, currentTodo, setCurrentTodo }) => {
+const TodoForm: React.FC<TodoFormProps> = ({ currentTodo, setCurrentTodo }) => {
   return (
     <div className="space-y-6 py-4">
       <div className="space-y-2">
@@ -106,7 +106,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ isEdit, currentTodo, setCurrentTodo
               onSelect={(date) =>
                 setCurrentTodo({
                   ...currentTodo,
-                  due_date: date ? date.toISOString().split("T")[0] : "",
+                  due_date: date ? addDays(date, 1).toISOString().split("T")[0] : "",
                 })
               }
               initialFocus
@@ -145,41 +145,39 @@ const Dashboard: React.FC = () => {
   const { toast } = useToast()
   const router = useRouter()
 
-
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
       router.push("/login")
     }
   }, [router])
-  
 
   useEffect(() => {
-    fetchTodos()
-  }, [])
-
-  const fetchTodos = async () => {
-    const token = localStorage.getItem("token")
-    if (!token) {
-      router.push("/login")
-      return
-    }
-
-    try {
-      const response = await listTodos(token)
-      if (response.data) {
-        setTodos(response.data)
-      } else {
-        throw new Error(response.error || "Failed to fetch todos")
+    const fetchTodos = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        router.push("/login")
+        return
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An error occurred while fetching todos",
-        variant: "destructive",
-      })
+
+      try {
+        const response = await listTodos(token)
+        if (response.data) {
+          setTodos(response.data)
+        } else {
+          throw new Error(response.error || "Failed to fetch todos")
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "An error occurred while fetching todos",
+          variant: "destructive",
+        })
+      }
     }
-  }
+
+    fetchTodos()
+  }, [router, toast])
 
   const addTodo = async (): Promise<void> => {
     if (newTodo.title.trim()) {
@@ -223,7 +221,7 @@ const Dashboard: React.FC = () => {
       todo_id: todo.todo_id,
       title: todo.title,
       description: todo.description,
-      due_date: todo.due_date.split("T")[0], 
+      due_date: todo.due_date.split("T")[0],
       priority: todo.priority,
       is_complete: todo.is_complete,
     })
@@ -249,7 +247,11 @@ const Dashboard: React.FC = () => {
           editingTodo.is_complete === 1,
         )
         if (response.data) {
-          setTodos(todos.map((todo) => (todo.todo_id === editingTodo.todo_id ? response.data : todo)))
+          setTodos(
+            todos.map((todo) => {
+              return todo.todo_id === editingTodo.todo_id && response.data ? response.data : todo
+            }),
+          )
           setEditingTodo(defaultTodo)
           setIsEditDialogOpen(false)
           toast({
@@ -316,7 +318,11 @@ const Dashboard: React.FC = () => {
         newIsComplete,
       )
       if (response.data) {
-        setTodos(todos.map((t) => (t.todo_id === todo.todo_id ? response.data : t)))
+        setTodos(
+          todos.map((t) => {
+            return t.todo_id === todo.todo_id && response.data ? response.data : t
+          }),
+        )
         toast({
           title: "Success",
           description: `Todo marked as ${newIsComplete ? "completed" : "incomplete"}`,
@@ -352,160 +358,166 @@ const Dashboard: React.FC = () => {
       return 0
     })
 
-  const getPriorityBadgeVariant = (priority: Todo["priority"]): "default" | "secondary" | "destructive" => {
+  const getPriorityBadgeVariant = (priority: "low" | "medium" | "high"): "default" | "secondary" | "destructive" => {
     const variants = {
       high: "destructive",
       medium: "secondary",
       low: "default",
-    } as const
+    } satisfies Record<Todo["priority"], "default" | "secondary" | "destructive">
+
     return variants[priority]
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+    <div className="w-full overflow-x-hidden">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 sm:px-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
 
-        {todos.length > 0 && (
-          <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2 min-w-[160px]">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={filter}
-                onValueChange={(value: string) => setFilter(value as "all" | "active" | "completed")}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tasks</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+          {todos.length > 0 && (
+            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select
+                  value={filter}
+                  onValueChange={(value: string) => setFilter(value as "all" | "active" | "completed")}
+                >
+                  <SelectTrigger className="w-full sm:w-auto">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All tasks</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <SortAsc className="h-4 w-4 text-muted-foreground" />
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as "priority" | "due_date")}>
+                  <SelectTrigger className="w-full sm:w-auto">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="due_date">Due Date</SelectItem>
+                    <SelectItem value="priority">Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          )}
+        </div>
 
-            <div className="flex items-center gap-2 min-w-[160px]">
-              <SortAsc className="h-4 w-4 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "priority" | "due_date")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="due_date">Due Date</SelectItem>
-                  <SelectItem value="priority">Priority</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="w-full gap-2">
-            <span>+</span> Add new task
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Task</DialogTitle>
-            <DialogDescription>Create a new task with title, description, due date, and priority.</DialogDescription>
-          </DialogHeader>
-          <TodoForm isEdit={false} currentTodo={newTodo} setCurrentTodo={setNewTodo} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full gap-2">
+              <span>+</span> Add new task
             </Button>
-            <Button onClick={addTodo}>Add Task</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Task</DialogTitle>
+              <DialogDescription>Create a new task with title, description, due date, and priority.</DialogDescription>
+            </DialogHeader>
+            <TodoForm currentTodo={newTodo} setCurrentTodo={setNewTodo} />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={addTodo}>Add Task</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-            <DialogDescription>Make changes to your task here.</DialogDescription>
-          </DialogHeader>
-          <TodoForm isEdit={true} currentTodo={editingTodo} setCurrentTodo={setEditingTodo} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+              <DialogDescription>Make changes to your task here.</DialogDescription>
+            </DialogHeader>
+            <TodoForm currentTodo={editingTodo} setCurrentTodo={setEditingTodo} />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveEdit}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <div className="space-y-4">
-        {todos.length === 0 ? (
-          <EmptyState onCreateClick={() => setIsCreateDialogOpen(true)} />
-        ) : (
-          filteredTodos.map((todo) => (
-            <Card key={todo.todo_id} className={cn("flex items-start gap-4 p-4 transition-colors hover:bg-accent")}>
-              <Checkbox
-                checked={todo.is_complete === 1}
-                onCheckedChange={() => toggleComplete(todo)}
-                className="mt-1"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3
-                      className={cn(
-                        "font-medium truncate",
-                        todo.is_complete === 1 && "line-through text-muted-foreground",
+        <div className="space-y-4">
+          {todos.length === 0 ? (
+            <EmptyState onCreateClick={() => setIsCreateDialogOpen(true)} />
+          ) : (
+            filteredTodos.map((todo) => (
+              <Card key={todo.todo_id} className={cn("flex items-start gap-4 p-4 transition-colors hover:bg-accent")}>
+                <Checkbox
+                  checked={todo.is_complete === 1}
+                  onCheckedChange={() => toggleComplete(todo)}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                      <h3
+                        className={cn(
+                          "font-medium truncate",
+                          todo.is_complete === 1 && "line-through text-muted-foreground",
+                        )}
+                      >
+                        {todo.title}
+                      </h3>
+                      <p
+                        className={cn(
+                          "text-sm text-muted-foreground line-clamp-2",
+                          todo.is_complete === 1 && "line-through",
+                        )}
+                      >
+                        {todo.description}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <Badge variant={getPriorityBadgeVariant(todo.priority as "low" | "medium" | "high")}>
+                        {todo.priority}
+                      </Badge>
+                      {todo.due_date && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <CalendarIcon className="h-3 w-3" />
+                          <span>{new Date(todo.due_date).toLocaleDateString("id-ID")}</span>
+                        </div>
                       )}
-                    >
-                      {todo.title}
-                    </h3>
-                    <p
-                      className={cn(
-                        "text-sm text-muted-foreground line-clamp-2 mt-1",
-                        todo.is_complete === 1 && "line-through",
-                      )}
-                    >
-                      {todo.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-  <Badge variant={getPriorityBadgeVariant(todo.priority)}>{todo.priority}</Badge>
-  {todo.due_date && (
-    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-      <CalendarIcon className="h-3 w-3" />
-      <span>{new Date(todo.due_date).toLocaleDateString('id-ID')}</span>
-    </div>
-                    )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => startEditing(todo)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => deleteTodoItem(todo.todo_id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))
-        )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => startEditing(todo)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => deleteTodoItem(todo.todo_id)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
 export default Dashboard
+

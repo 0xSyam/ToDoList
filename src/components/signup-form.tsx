@@ -16,12 +16,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const router = useRouter()
   const { toast } = useToast()
 
-  
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (token) {
-      
-      router.push("/dashboard")
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token")
+      if (token) {
+        router.push("/dashboard")
+      }
     }
   }, [router])
 
@@ -68,9 +68,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
   }
 
- 
-  const token = localStorage.getItem("token")
-  if (token) {
+  if (typeof window !== "undefined" && localStorage.getItem("token")) {
     return null 
   }
 
