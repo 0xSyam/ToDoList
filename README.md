@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ToDoList
 
-## Getting Started
+![App Screenshot](public/images/dashboard.png)
 
-First, run the development server:
+ToDoList is a task management application built with Next.js and Tailwind CSS. It is designed to help you organize and track daily tasks with a simple and intuitive interface.
+
+## ✨ Features
+
+- ✅ **Add Tasks**: Easily add new tasks.
+- ❌ **Delete Tasks**: Remove completed or unnecessary tasks.
+- 🔄 **Mark as Done**: Mark tasks as completed to track your progress.
+- 🌗 **Dark/Light Mode**: Switch between dark and light mode based on your preference.
+- 📱 **Responsive**: Fully responsive interface that works on various devices.
+
+## 🛠 Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Programming Language**: [TypeScript](https://www.typescriptlang.org/)
+
+
+## 🚀 Installation & Running Locally
+
+Follow these steps to run the project locally:
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/0xSyam/ToDoList.git
+```
+
+### 2️⃣ Navigate to the Project Directory
+
+```bash
+cd ToDoList
+```
+
+### 3️⃣ Install Dependencies
+
+```bash
+npm install --force
+```
+
+### 4️⃣ Start the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤝 Contributions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Contributions are welcome! If you have ideas for new features or find any bugs, feel free to open an issue or submit a pull request.
 
-## Learn More
+## 📜 License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the [MIT License](https://choosealicense.com/licenses/mit/).
